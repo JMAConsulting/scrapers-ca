@@ -125,7 +125,7 @@ class CanadianScraper(Scraper):
         for match in node.xpath('{}//a[contains(@href, "mailto:")]'.format(expression)):
             matches.append(unquote(match.attrib["href"]))
         # Some emails are obfuscated by Cloudflare.
-        for match in node.xpath('{}//@href[contains(., "cdn-cgi/l/email-protection")]'.format(expression)):
+        for match in node.xpath("{}//@data-cfemail".format(expression)):
             matches.append(self._cloudflare_decode(match))
         # If the node has no sub-tags.
         if not matches:
@@ -142,8 +142,7 @@ class CanadianScraper(Scraper):
             raise Exception("No email node in {}".format(etree.tostring(node)))
 
     # Helper function for self,get_email
-    def _cloudflare_decode(self, link):
-        hex_email = link.split("#", 1)[1]
+    def _cloudflare_decode(self, hex_email):
         decoded_email = ""
         key = int(hex_email[:2], 16)
 
