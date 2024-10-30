@@ -14,11 +14,11 @@ class WoolwichPersonScraper(CanadianScraper):
 
         councillors = page.xpath('//div[@class="info repeatable-content collapse  "]')
         assert len(councillors), "No councillors found"
-        for councillor in councillors[1:]:
+        for councillor in councillors:
             info = councillor.xpath('.//div[@class="text"]/p/text()') + councillor.xpath('.//div[@class="text"]/p/a/text()')
-            name = info[-1].split("Email ")[-1]
 
             if "Councillor" in info[0]:
+                name = info[-1].split("Email ")[-1]
                 role = "Councillor"
                 area = re.search(r"Ward \d", info[0])
                 if not area:
@@ -27,9 +27,11 @@ class WoolwichPersonScraper(CanadianScraper):
                     seat_numbers[area] += 1
                     district = area.group(0) + f" (seat {seat_numbers[area]})"
             else:
+                name = info[0]
                 role = "Mayor"
+                district = "Woolwich"
 
-            office = re.search(r"(?<=Office: )\d{3}-\d{3}-\d{4}", info[1] if "Councillor" in info[0] else info[0]).group(0)
+            office = re.search(r"(?<=Office: )\d{3}-\d{3}-\d{4}", info[1] if "Councillor" in info[0] else info[2]).group(0)
             voice = (
                 re.search(r"(?<=Toll Free: )(1-)?\d{3}-\d{3}-\d{4}( extension \d{4})?", info[2] if "Councillor" in info[0] else info[3])
                 .group(0)
