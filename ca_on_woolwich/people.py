@@ -4,7 +4,7 @@ from collections import defaultdict
 from utils import CanadianPerson as Person
 from utils import CanadianScraper
 
-COUNCIL_PAGE = "http://www.woolwich.ca/en/council/council.asp"
+COUNCIL_PAGE = "https://www.woolwich.ca/learn-about/council/"
 
 
 class WoolwichPersonScraper(CanadianScraper):
@@ -12,22 +12,26 @@ class WoolwichPersonScraper(CanadianScraper):
         seat_numbers = defaultdict(int)
         page = self.lxmlize(COUNCIL_PAGE)
 
-        councillors = page.xpath('//td[@data-name="accParent"]/h2')
+        councillors = page.xpath('//div[@class="info repeatable-content collapse  "]')
         assert len(councillors), "No councillors found"
-        for councillor in councillors:
-            role, name = re.split(r"\s", councillor.text_content(), maxsplit=1)
-            area = re.search(r"Ward \d", name)
-            if not area:
-                district = "Woolwich"
+        for councillor in councillors[1:]:
+            info = councillor.xpath('.//div[@class="text"]/p/text()') + councillor.xpath('.//div[@class="text"]/p/a/text()')
+            name = info[-1].split("Email ")[-1]
+
+            if "Councillor" in info[0]:
+                role = "Councillor"
+                area = re.search(r"Ward \d", info[0])
+                if not area:
+                    district = "Woolwich"
+                else:
+                    seat_numbers[area] += 1
+                    district = area.group(0) + f" (seat {seat_numbers[area]})"
             else:
-                seat_numbers[area] += 1
-                district = area.group(0) + f" (seat {seat_numbers[area]})"
-            if "(" in name:
-                name = name.split(" (")[0]
-            info = councillor.xpath("./ancestor::tr[1]/following-sibling::tr")[0].text_content()
-            office = re.search(r"(?<=Office: )\d{3}-\d{3}-\d{4}", info).group(0)
+                role = "Mayor"
+
+            office = re.search(r"(?<=Office: )\d{3}-\d{3}-\d{4}", info[1] if "Councillor" in info[0] else info[0]).group(0)
             voice = (
-                re.search(r"(?<=Toll Free: )(1-)?\d{3}-\d{3}-\d{4}( extension \d{4})?", info)
+                re.search(r"(?<=Toll Free: )(1-)?\d{3}-\d{3}-\d{4}( extension \d{4})?", info[2] if "Councillor" in info[0] else info[3])
                 .group(0)
                 .replace("extension", "x")
             )
