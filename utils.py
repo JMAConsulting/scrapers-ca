@@ -10,6 +10,7 @@ from zipfile import ZipFile
 
 import agate
 import agateexcel  # noqa: F401
+import cloudscraper
 import lxml.html
 import requests
 from lxml import etree
@@ -23,6 +24,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 CUSTOM_USER_AGENT = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)"
 DEFAULT_USER_AGENT = requests.utils.default_user_agent()
+SCRAPER = cloudscraper.create_scraper()
 
 CONTACT_DETAIL_TYPE_MAP = {
     "Address": "address",
@@ -168,7 +170,7 @@ class CanadianScraper(Scraper):
         if area_codes:
             for area_code in area_codes:
                 match = re.search(
-                    r"(?:\A|\D)(\(?%d\)?\D?\d{3}\D?\d{4}(?:\s*(?:/|x|ext[.:]?|poste)[\s-]?\d+)?)(?:\D|\Z)" % area_code,
+                    r"(?:\A|\D)(\(?%d\)?\D?\d{3}\D?\d{4}(?:\s*(?:/|x|ext[.:]?|poste)[\s-]?\d+)?)(?:\D|\Z)" % area_code,  # noqa: UP031
                     node.text_content(),
                 )
                 if match:
@@ -198,7 +200,16 @@ class CanadianScraper(Scraper):
     def post(self, *args, **kwargs):
         return super().post(*args, verify=kwargs.pop("verify", SSL_VERIFY), **kwargs)
 
-    def lxmlize(self, url, encoding=None, *, user_agent=DEFAULT_USER_AGENT, cookies=None, xml=False, verify=SSL_VERIFY):
+    def cloudscrape(self, url, verify=SSL_VERIFY):
+        response = SCRAPER.get(url, verify=verify)
+        response.raise_for_status()
+        page = lxml.html.fromstring(response.content)
+        page.make_links_absolute(url)
+        return page
+
+    def lxmlize(
+        self, url, encoding=None, *, user_agent=DEFAULT_USER_AGENT, cookies=None, xml=False, verify=SSL_VERIFY
+    ):
         # Sets User-Agent header.
         # https://github.com/jamesturk/scrapelib/blob/5ce0916/scrapelib/__init__.py#L505
         self.user_agent = user_agent
@@ -240,10 +251,7 @@ class CanadianScraper(Scraper):
                 response = self.get(url, **kwargs)
                 if encoding:
                     response.encoding = encoding
-                text = response.text.strip()
-                if text.startswith("\ufeff"):  # BOM
-                    text = text[1:]
-                data = StringIO(text)
+                data = StringIO(response.text.strip().removeprefix("\ufeff"))  # BOM
         if skip_rows:
             for _ in range(skip_rows):
                 data.readline()
@@ -739,9 +747,10 @@ def clean_string(s):
 
 
 def clean_name(s):
-    return honorific_suffix_re.sub(
-        "", honorific_prefix_re.sub("", whitespace_re.sub(" ", str(s).translate(table)).strip())
-    )
+    name = honorific_suffix_re.sub("", whitespace_re.sub(" ", str(s).translate(table)).strip())
+    if name.count(" ") > 1:
+        return honorific_prefix_re.sub("", name)  # Avoid truncating names like "Hon Chan"
+    return name
 
 
 def clean_type_id(type_id):

@@ -14,9 +14,11 @@ certifi==2024.8.30
     # via requests
 charset-normalizer==3.3.2
     # via requests
+cloudscraper==1.2.71
+    # via -r requirements.in
 dj-database-url==0.3.0
     # via pupa
-django==4.2.16
+django==4.2.20
     # via
     #   -r requirements.in
     #   opencivicdata
@@ -31,7 +33,7 @@ isodate==0.6.1
     # via agate
 leather==0.4.0
     # via agate
-lxml==4.9.1
+lxml==5.3.0
     # via -r requirements.in
 olefile==0.47
     # via agate-excel
@@ -43,24 +45,30 @@ openpyxl==3.1.5
     # via agate-excel
 parsedatetime==2.6
     # via agate
-psycopg2==2.9.9
+psycopg2==2.9.10
     # via pupa
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
     # via opencivicdata
 pupa @ git+https://github.com/opencivicdata/pupa@f0791f7de07574039eff10d804e4683399a16ec5
     # via -r requirements.in
+pyparsing==3.2.1
+    # via cloudscraper
 python-slugify==8.0.4
     # via agate
 pytimeparse==1.1.8
     # via agate
 pytz==2024.2
     # via pupa
-regex==2014.4.10
+regex==2024.11.6
     # via -r requirements.in
 requests==2.32.3
     # via
     #   -r requirements.in
+    #   cloudscraper
+    #   requests-toolbelt
     #   scrapelib
+requests-toolbelt==1.0.0
+    # via cloudscraper
 scrapelib==2.3.0
     # via pupa
 six==1.16.0
