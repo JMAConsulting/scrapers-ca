@@ -9,7 +9,6 @@ class CalgaryPersonScraper(CanadianScraper):
         page = self.lxmlize(COUNCIL_PAGE)
 
         councillors = page.xpath('//div[contains(@class, "cui card ")]')
-        print(len(councillors))
         assert len(councillors), "No councillors found"
         for councillor in councillors:
             name = councillor.xpath(".//h3")[0].text_content()
