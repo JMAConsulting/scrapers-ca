@@ -20,7 +20,7 @@ class OntarioPersonScraper(CanadianScraper):
         assert len(members), "No members found"
         for member in members:
             name = member.xpath(".//a//text()")[0]
-            if "Vacant seat" in name:
+            if "Vacant seat" in name or "Pending " in name:
                 continue
             url = member.xpath(".//a//@href")[0]
             node = self.lxmlize(url, encoding="utf-8")
@@ -33,7 +33,7 @@ class OntarioPersonScraper(CanadianScraper):
 
             district = "".join(
                 node.xpath(
-                    '//div[@block="block-views-block-member-member-riding-block"]' '//p[@class="riding"]//a//text()'
+                    '//div[@block="block-views-block-member-member-riding-block"]//p[@class="riding"]//a//text()'
                 )
             ).strip()
             nodes = node.xpath('//div[@id="main-content"]//a')

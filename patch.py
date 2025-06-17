@@ -23,7 +23,10 @@ _contact_details["items"]["properties"]["type"]["enum"] = [
 _contact_details["items"]["properties"]["value"]["blank"] = False
 # Validate the format of contact_details[].value if contact_details[].type is an email address or telephone number.
 _contact_details["items"]["properties"]["value"]["conditionalPattern"] = [
-    (r"\A([A-Za-z0-9._\'-]+)@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}\Z", lambda x: x["type"] == "email"),
+    (
+        r"\A([A-Za-z0-9._\'+-]+)@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}\Z",
+        lambda x: x["type"] == "email",
+    ),  # accounts for + in email addresses
     (r"\A1 \d{3} \d{3}-\d{4}(?: x\d+)?\Z", lambda x: x["type"] in ("text", "voice", "fax", "cell", "video", "pager")),
 ]
 # Validate the format of contact_details[].note.
@@ -123,15 +126,20 @@ name_fragment = (
     r'[("](?:\p{Lu}+|\p{Lu}\p{Ll}*(?:-\p{Lu}\p{Ll}*)*)[)"]|'
     r"(?:D'|d'|De|de|Des|Di|Du|L'|La|Le|Mac|Mc|O'|San|St\.|Van|Vander?|van|vanden)?\p{Lu}\p{Ll}+|"
     r"\p{Lu}\p{Ll}+Anne?|Marie\p{Lu}\p{Ll}+|"
-    r"Ch'ng|Prud'homme|"
-    r"D!ONNE|IsaBelle|Ya'ara"
+    # Inuktitut syllabics
+    r"[ᐁᐃᐄᐅᐆᐊᐋᐯᐱᐲᐳᐴᐸᐹᑉᑊᑌᑎᑏᑐᑑᑕᑖᑦᑫᑭᑮᑯᑰᑲᑳᒃᒉᒋᒌᒍᒎᒐᒑᒡᒣᒥᒦᒧᒨᒪᒫᒻᓀᓂᓃᓄᓅᓇᓈᓐᓓᓕᓖᓗᓘᓚᓛᓪᓭᓯᓰᓱᓲᓴᓵᔅᔦᔨᔩᔪᔫᔭᔮᔾᕂᕆᕇᕈᕉ"
+    r"ᕋᕌᕐᕓᕕᕖᕗᕘᕙᕚᕝᕴᕵᕶᕷᕸᕹᕺᕻᕼᕿᖀᖁᖂᖃᖄᖅᖏᖐᖑᖒᖓᖔᖕᖖᖠᖡᖢᖣᖤᖥᖦᖨᖩᖪᖫᖬᖭᖮᖯᙯᙰᙱᙲᙳᙴᙵᙶ𑪰𑪱𑪲𑪳𑪴𑪵𑪶𑪷𑪸𑪹𑪺𑪻]+|"
+    # Apostrophes
+    r"Á'a:líya|A'aliya|Ch'ng|Prud'homme|Qwulti'stunaat|Ya'ara|"
+    # Miscellaneous
+    r"D!ONNE|ChiefCalf|IsaBelle"
     r")"
 )
 
 # Name components can be joined by apostrophes, hyphens or spaces.
 person_schema["properties"]["name"]["pattern"] = re.compile(
     r"\A"
-    r"(?!(?:Chair|Commissioner|Conseiller|Councillor|Deputy|Dr|Hon|M|Maire|Mayor|Miss|Mme|Mr|Mrs|Ms|Regional|Warden)\b)"
+    r"(?!(?:Chair|Commissioner|Conseiller|Councillor|Deputy|Dr|M|Maire|Mayor|Miss|Mme|Mr|Mrs|Ms|Regional|Warden)\b)"
     r"(?:" + name_fragment + r"(?:'|-| - | )"
     r")+" + name_fragment + r"\Z"
 )

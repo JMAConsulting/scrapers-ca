@@ -1,7 +1,5 @@
-import requests
-
-from utils import DEFAULT_USER_AGENT, CanadianScraper
 from utils import CanadianPerson as Person
+from utils import CanadianScraper
 
 COUNCIL_PAGE = "https://www.thunderbay.ca/en/city-hall/mayor-and-council-profiles.aspx"
 
