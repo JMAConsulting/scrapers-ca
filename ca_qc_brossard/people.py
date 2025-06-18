@@ -46,11 +46,12 @@ class BrossardPersonScraper(CanadianScraper):
             and re.search(r"DISTRICT \d+\s+[-|]\sSecteur", element.get("children").get("fr"))
         ]
 
-        assert len(councillors), "No councillors found"
+        assert councillors, "No councillors found"
         for councillor in councillors:
             district = re.search(r"DISTRICT (\d+)", councillor["children"]["fr"]).group(0).title()
             parent_id = councillor["parent"]
             children = get_children(parent_id, elements)
+            name = None
             phone = None
             for id in children:
                 child = elements[id]
@@ -85,6 +86,7 @@ class BrossardPersonScraper(CanadianScraper):
                 mayor = element
         parent_id = mayor["parent"]
         children = get_children(parent_id, elements)
+        name = None
         phone = None
         for id in children:
             child = elements[id]

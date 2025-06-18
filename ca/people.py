@@ -1,4 +1,8 @@
 import hashlib
+import re
+
+from opencivicdata.divisions import Division
+from unidecode import unidecode
 
 from utils import CanadianPerson as Person
 from utils import CanadianScraper
@@ -8,6 +12,16 @@ COUNCIL_PAGE_MALE = "https://www.ourcommons.ca/Members/en/search?caucusId=all&pr
 COUNCIL_PAGE_FEMALE = "https://www.ourcommons.ca/Members/en/search?caucusId=all&province=all&gender=F"
 IMAGE_PLACEHOLDER_SHA1 = ["e4060a9eeaf3b4f54e6c16f5fb8bf2c26962e15d"]
 
+TRANSLATION_TABLE = str.maketrans("\u2013\u2014-", "   ", "\u200f")  # n-dash, m-dash, right-to-left mark
+CONSECUTIVE_WHITESPACE_REGEX = re.compile(r"\s+")
+CORRECTIONS = {
+    # Different names.
+    "Kelowna Lake Country": "Kelowna",
+    "Nonafot Nunavut": "Nunavut",
+    # Typographic errors.
+    "Northwest Territores": "Northwest Territories",
+}
+
 
 class CanadaPersonScraper(CanadianScraper):
     """
@@ -16,7 +30,20 @@ class CanadaPersonScraper(CanadianScraper):
     contact information or photo URLs.
     """
 
+    normalized_names = {}
+
+    def normalize_district(self, district):
+        # Ignore accents, hyphens, lettercase, and leading, trailing and consecutive whitespace.
+        district = unidecode(district.translate(TRANSLATION_TABLE)).title().strip()
+        district = CONSECUTIVE_WHITESPACE_REGEX.sub(" ", district)
+        return CORRECTIONS.get(district, district)
+
     def scrape(self):
+        # Create list mapping names to IDs.
+        for division in Division.get("ocd-division/country:ca").children("ed"):
+            if "2023" in division.id:
+                self.normalized_names[self.normalize_district(division.name)] = division.name
+
         genders = {"male": COUNCIL_PAGE_MALE, "female": COUNCIL_PAGE_FEMALE}
         for gender, url in genders.items():
             page = self.lxmlize(url)
@@ -28,9 +55,7 @@ class CanadaPersonScraper(CanadianScraper):
         for row in rows:
             name = row.xpath('.//div[@class="ce-mip-mp-name"][1]')[0].text_content()
             constituency = row.xpath('.//div[@class="ce-mip-mp-constituency"][1]')[0].text_content()
-            constituency = constituency.replace("–", "—")  # n-dash, m-dash
-            if constituency == "Mont-Royal":
-                constituency = "Mount Royal"
+            constituency = self.normalized_names[self.normalize_district(constituency)]
 
             province = row.xpath('.//div[@class="ce-mip-mp-province"][1]')[0].text_content()
 
@@ -133,14 +158,14 @@ class CanadaPersonScraper(CanadianScraper):
                     phone_and_fax = phone_and_fax_el[0].text_content().strip().splitlines()
                     # Note that https://www.ourcommons.ca/Members/en/michael-barrett(102275)#contact
                     # has a empty value - "Telephone:". So the search / replace cannot include space.
-                    voice = phone_and_fax[0].replace("Telephone:", "").replace("Téléphone :", "").strip()
-                    if len(phone_and_fax) > 1:
-                        fax = phone_and_fax[1].replace("Fax:", "").replace("Télécopieur :", "").strip()
 
+                    voice = phone_and_fax[0].replace("Telephone:", "").replace("Téléphone :", "").strip()
                     if voice:
                         m.add_contact("voice", voice, note)
 
-                    if fax:
-                        m.add_contact("fax", fax, note)
+                    if len(phone_and_fax) > 1:
+                        fax = phone_and_fax[1].replace("Fax:", "").replace("Télécopieur :", "").strip()
+                        if fax:
+                            m.add_contact("fax", fax, note)
 
             yield m

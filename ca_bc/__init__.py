@@ -9,10 +9,11 @@ class BritishColumbia(CanadianJurisdiction):
     url = "http://www.leg.bc.ca"
     parties = [
         {"name": "Conservative Party of British Columbia"},
-        {"name": "New Democratic Party of British Columbia"},
+        {"name": "British Columbia New Democratic Party"},
         {"name": "British Columbia Liberal Party"},
-        {"name": "BC Green Party"},
+        {"name": "British Columbia Green Party"},
         {"name": "BC United"},
         {"name": "Independent"},
     ]
     skip_null_valid_from = True
+    valid_from = "2024-10-19"
